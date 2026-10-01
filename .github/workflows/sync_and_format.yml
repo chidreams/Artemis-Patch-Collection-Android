@@ -1,0 +1,55 @@
+name: Sync and Format for Android
+
+on:
+  workflow_dispatch:
+  # Optional: Uncomment if you want it to check daily or trigger via repository_dispatch from main repo
+  # schedule:
+  #   - cron: '0 4 * * *'
+
+jobs:
+  sync-and-format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Android Repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: pip install pyyaml requests
+
+      - name: Fetch import_patch.yml from Main Repo
+        env:
+          # Use a Personal Access Token (PAT) stored in GitHub Secrets if your main repo is private
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Replace with your actual main desktop repo path (owner/repo)
+          MAIN_REPO="chidreams/Artemis-Patch-Collection-RPCS3"
+          BRANCH="main"
+          FILE_PATH="imported_patch.yml" # Adjust path if located in a subfolder in main repo
+          
+          URL="https://raw.githubusercontent.com/$MAIN_REPO/$BRANCH/$FILE_PATH"
+          echo "Fetching from $URL"
+          
+          mkdir -p patches
+          curl -H "Authorization: token $GITHUB_TOKEN" -L -o patches/imported_patch.yml "$URL"
+
+      - name: Run Android Formatter Script
+        run: python scripts/format_android.py
+
+      - name: Commit and Push Changes if Updated
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add patches/imported_patch.yml
+          
+          # Check if there are changes to commit
+          if git diff --staged --quiet; then
+            echo "No changes to sync."
+          else
+            git commit -m "Auto-sync and format import_patch.yml for Android (ARMSX3)"
+            git push
+          fi
