@@ -1,5 +1,4 @@
 import os
-import yaml
 
 input_path = "patches/imported_patch.yml"
 
@@ -19,23 +18,11 @@ if os.path.exists(input_path):
         
     cleaned_content = "\n".join(cleaned_lines)
 
-    # Load and parse the YAML content safely
-    try:
-        data = list(yaml.safe_load_all(cleaned_content))
-        if len(data) == 1:
-            data = data[0]
-    except Exception as e:
-        print(f"Warning during yaml load: {e}")
-        data = None
-
+    # Write strictly as text: Exactly ONE Version: 1.2 header + raw untouched patch content
     with open(input_path, "w", encoding="utf-8", newline="\n") as f:
-        # Write exactly ONE Version: 1.2 header at the very top
         f.write("Version: 1.2\n")
-        if data is not None:
-            yaml.safe_dump(data, f, sort_keys=False, default_flow_style=False)
-        else:
-            f.write(cleaned_content)
+        f.write(cleaned_content)
     
-    print("Successfully formatted imported_patch.yml with a single Android header.")
+    print("Successfully prepended Version: 1.2 header as raw text safely.")
 else:
     print(f"Error: {input_path} not found.")
