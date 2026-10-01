@@ -1,12 +1,15 @@
-name: Sync and Format for Android
+name: Sync, Format, and Release for Android
 
 on:
   workflow_dispatch:
   repository_dispatch:
     types: [sync_android_patches]
 
+permissions:
+  contents: write # Required to push commits and create releases
+
 jobs:
-  sync-and-format:
+  sync-format-release:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Android Repo
@@ -22,7 +25,6 @@ jobs:
 
       - name: Fetch import_patch.yml from Main Repo
         env:
-          # Note: If your main desktop repo is private, change GITHUB_TOKEN to ${{ secrets.GH_PAT }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           MAIN_REPO="chidreams/Artemis-Patch-Collection-RPCS3"
@@ -39,15 +41,36 @@ jobs:
         run: python scripts/format_android.py
 
       - name: Commit and Push Changes if Updated
+        id: git-check
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add patches/imported_patch.yml
           
-          # Check if there are changes to commit
           if git diff --staged --quiet; then
+            echo "changes=false" >> $GITHUB_OUTPUT
             echo "No changes to sync."
           else
+            echo "changes=true" >> $GITHUB_OUTPUT
             git commit -m "Auto-sync and format import_patch.yml for Android (ARMSX3)"
             git push
           fi
+
+      - name: Create Dynamic Release Tag
+        if: steps.git-check.outputs.changes == 'true'
+        id: tag
+        run: |
+          TAG_NAME="v$(date +'%Y.%m.%d-%H%M%S')"
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+          
+          git tag $TAG_NAME
+          git push origin $TAG_NAME
+
+      - name: Publish GitHub Release with Patch File
+        if: steps.git-check.outputs.changes == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag_name }}
+          name: "Android Patch Collection Update (${{ steps.tag.outputs.tag_name }})"
+          body: "Automatically synced and formatted `imported_patch.yml` for Android / ARMSX3 users."
+          files: patches/imported_patch.yml
