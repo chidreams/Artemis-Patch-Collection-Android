@@ -2,9 +2,8 @@ name: Sync and Format for Android
 
 on:
   workflow_dispatch:
-  # Optional: Uncomment if you want it to check daily or trigger via repository_dispatch from main repo
-  # schedule:
-  #   - cron: '0 4 * * *'
+  repository_dispatch:
+    types: [sync_android_patches]
 
 jobs:
   sync-and-format:
@@ -23,13 +22,12 @@ jobs:
 
       - name: Fetch import_patch.yml from Main Repo
         env:
-          # Use a Personal Access Token (PAT) stored in GitHub Secrets if your main repo is private
+          # Note: If your main desktop repo is private, change GITHUB_TOKEN to ${{ secrets.GH_PAT }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Replace with your actual main desktop repo path (owner/repo)
           MAIN_REPO="chidreams/Artemis-Patch-Collection-RPCS3"
           BRANCH="main"
-          FILE_PATH="imported_patch.yml" # Adjust path if located in a subfolder in main repo
+          FILE_PATH="imported_patch.yml"
           
           URL="https://raw.githubusercontent.com/$MAIN_REPO/$BRANCH/$FILE_PATH"
           echo "Fetching from $URL"
