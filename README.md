@@ -27,7 +27,7 @@ This project ensures Android users get a **reliable, maintained, and confusion�
 ---
 
 ## 📚 What’s Included
-- **468+ converted games**  
+- **250+ converted games**  
 - **ARMSX‑friendly Android patch format**  
 - **Consistent structure across all titles**  
 - **Version display inside each cheat**  
